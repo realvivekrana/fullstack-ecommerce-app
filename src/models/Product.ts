@@ -25,6 +25,7 @@ export interface IProduct extends Document {
   featured: boolean
   createdAt: Date
   updatedAt: Date
+  updateRating(): void
 }
 
 const ReviewSchema = new Schema<IReview>({
