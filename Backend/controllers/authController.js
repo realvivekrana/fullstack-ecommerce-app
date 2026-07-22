@@ -79,3 +79,81 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
   sendResponse(res, 200, updatedUser, 'Profile updated successfully');
 });
+
+// @desc    Add a new address
+// @route   POST /api/auth/addresses
+// @access  Private
+export const addAddress = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  const { label, fullName, phone, line1, line2, city, state, pincode, isDefault } = req.body;
+
+  if (isDefault) {
+    user.addresses.forEach((addr) => (addr.isDefault = false));
+  }
+
+  // First address added is automatically the default
+  const shouldBeDefault = isDefault || user.addresses.length === 0;
+
+  user.addresses.push({ label, fullName, phone, line1, line2, city, state, pincode, isDefault: shouldBeDefault });
+  await user.save();
+
+  sendResponse(res, 201, user.addresses, 'Address added successfully');
+});
+
+// @desc    Update an existing address
+// @route   PUT /api/auth/addresses/:addressId
+// @access  Private
+export const updateAddress = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  const address = user.addresses.id(req.params.addressId);
+
+  if (!address) {
+    throw new ApiError(404, 'Address not found');
+  }
+
+  const { label, fullName, phone, line1, line2, city, state, pincode, isDefault } = req.body;
+
+  if (isDefault) {
+    user.addresses.forEach((addr) => (addr.isDefault = false));
+  }
+
+  Object.assign(address, {
+    ...(label !== undefined && { label }),
+    ...(fullName !== undefined && { fullName }),
+    ...(phone !== undefined && { phone }),
+    ...(line1 !== undefined && { line1 }),
+    ...(line2 !== undefined && { line2 }),
+    ...(city !== undefined && { city }),
+    ...(state !== undefined && { state }),
+    ...(pincode !== undefined && { pincode }),
+    ...(isDefault !== undefined && { isDefault }),
+  });
+
+  await user.save();
+
+  sendResponse(res, 200, user.addresses, 'Address updated successfully');
+});
+
+// @desc    Delete an address
+// @route   DELETE /api/auth/addresses/:addressId
+// @access  Private
+export const deleteAddress = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  const address = user.addresses.id(req.params.addressId);
+
+  if (!address) {
+    throw new ApiError(404, 'Address not found');
+  }
+
+  const wasDefault = address.isDefault;
+  address.deleteOne();
+
+  // Promote another address to default if the deleted one was the default
+  if (wasDefault && user.addresses.length > 0) {
+    user.addresses[0].isDefault = true;
+  }
+
+  await user.save();
+
+  sendResponse(res, 200, user.addresses, 'Address deleted successfully');
+});

@@ -6,14 +6,20 @@ class ApiFeatures {
 
   filter() {
     const queryObj = { ...this.queryString };
-    const excludedFields = ['page', 'sort', 'limit', 'fields', 'keyword'];
+    const excludedFields = ['page', 'sort', 'limit', 'fields', 'keyword', 'minPrice', 'maxPrice'];
     excludedFields.forEach((field) => delete queryObj[field]);
 
-    // Support gte/gt/lte/lt operators, e.g. price[lte]=1000
-    let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+    this.query = this.query.find(queryObj);
 
-    this.query = this.query.find(JSON.parse(queryStr));
+    // Handle price range explicitly (avoids relying on bracket-notation query
+    // string parsing, which Express 5 no longer does by default)
+    if (this.queryString.minPrice || this.queryString.maxPrice) {
+      const priceFilter = {};
+      if (this.queryString.minPrice) priceFilter.$gte = Number(this.queryString.minPrice);
+      if (this.queryString.maxPrice) priceFilter.$lte = Number(this.queryString.maxPrice);
+      this.query = this.query.find({ price: priceFilter });
+    }
+
     return this;
   }
 

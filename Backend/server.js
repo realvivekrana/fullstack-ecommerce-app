@@ -19,6 +19,15 @@ connectDB();
 
 const app = express();
 
+// Disable automatic ETag generation — was causing browsers to cache stale/empty
+// API responses and receive 304 Not Modified instead of fresh data.
+app.set('etag', false);
+
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
 // Core middleware
 app.use(
   cors({

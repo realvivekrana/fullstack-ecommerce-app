@@ -32,7 +32,7 @@ function Shop() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { page, limit: 8, 'price[lte]': priceRange };
+      const params = { page, limit: 8, maxPrice: priceRange };
       if (selectedCategory) params.category = selectedCategory;
       if (selectedTag) params.tag = selectedTag;
       if (sort !== 'relevance') params.sort = sort;

@@ -24,7 +24,16 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('token');
   };
 
-  const value = { user, isAuthenticated: !!user, login, logout };
+  // Merges partial updates into the current user (e.g. after profile edit)
+  const updateUser = (updates) => {
+    setUser((prev) => {
+      const next = { ...prev, ...updates };
+      localStorage.setItem('user', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const value = { user, isAuthenticated: !!user, login, logout, updateUser };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
